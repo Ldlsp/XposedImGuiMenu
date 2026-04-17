@@ -27,30 +27,37 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. 设置 Android SDK（包含 NDK 和 CMake）
+      # 3. 设置 Android SDK（只安装基础工具）
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: 'platforms;android-34'
-          ndk: '25.2.9519653'
-          cmake: '3.22.1'
 
-      # 4. 配置 Gradle 缓存
+      # 4. 安装指定的 NDK 和 CMake 版本
+      - name: Install NDK and CMake
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "ndk;25.2.9519653"
+          sdkmanager "cmake;3.22.1"
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/25.2.9519653" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/25.2.9519653" >> $GITHUB_ENV
+          echo "CMAKE_HOME=${ANDROID_HOME}/cmake/3.22.1.2227247/bin" >> $GITHUB_ENV
+          echo "${ANDROID_HOME}/cmake/3.22.1.2227247/bin" >> $GITHUB_PATH
+
+      # 5. 配置 Gradle 缓存
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: wrapper
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      # 5. 赋予 gradlew 执行权限
+      # 6. 赋予 gradlew 执行权限
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 6. 构建 Release APK
+      # 7. 构建 Release APK
       - name: Build release APK
         run: ./gradlew assembleRelease --stacktrace
 
-      # 7. 上传构建产物
+      # 8. 上传构建产物
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
